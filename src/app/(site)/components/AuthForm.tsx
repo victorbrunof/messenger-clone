@@ -8,6 +8,8 @@ import { Input } from '../../components/inputs/Input'
 import { Button } from '@/app/components/Button'
 import { AuthSocialButton } from './AuthSocialButton'
 import axios from 'axios'
+import { signIn } from 'next-auth/react'
+import { toast } from 'react-hot-toast'
 
 type Variant = 'LOGIN' | 'REGISTER'
 
@@ -39,18 +41,44 @@ export function AuthForm() {
     setIsLoading(true)
 
     if (variant === 'REGISTER') {
-      axios.post('/api/register', data)
+      axios
+        .post('/api/register', data)
+        .catch(() => toast.error('Algo deu errado'))
+        .finally(() => setIsLoading(false))
     }
 
     if (variant === 'LOGIN') {
-      // NextAuth SignIn
+      signIn('credentials', {
+        ...data,
+        redirect: false,
+      })
+        .then((callback: any) => {
+          if (callback?.error) {
+            toast.error('Email ou senha incorretos')
+          }
+
+          if (callback?.ok && !callback?.error) {
+            toast.success('Sucesso')
+          }
+        })
+        .finally(() => setIsLoading(false))
     }
   }
 
   const socialAction = (action: string) => {
     setIsLoading(true)
 
-    // NextAuth Social Sign In
+    signIn(action, { redirect: false })
+      .then((callback: any) => {
+        if (callback?.error) {
+          toast.error('Credencial inválida')
+        }
+
+        if (callback?.ok && !callback?.error) {
+          toast.success('Sucesso')
+        }
+      })
+      .finally(() => setIsLoading(false))
   }
 
   return (
@@ -108,7 +136,7 @@ export function AuthForm() {
             />
             <AuthSocialButton
               icon={BsGoogle}
-              onClick={() => socialAction('github')}
+              onClick={() => socialAction('google')}
             />
           </div>
         </div>
